@@ -48,11 +48,10 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
     @Override
     public boolean handle(LoginPacket loginPacket) {
         if (loginPacket.getProtocolVersion() > GeyserConnector.BEDROCK_PACKET_CODEC.getProtocolVersion()) {
-            // Too early to determine session locale
-            session.disconnect(LanguageUtils.getLocaleStringLog("geyser.network.outdated.server", GeyserConnector.BEDROCK_PACKET_CODEC.getMinecraftVersion()));
+            session.disconnect(LanguageUtils.getPlayerLocaleString("geyser.network.outdated.server", session.getClientData().getLanguageCode(), GeyserConnector.BEDROCK_PACKET_CODEC.getMinecraftVersion()));
             return true;
         } else if (loginPacket.getProtocolVersion() < GeyserConnector.BEDROCK_PACKET_CODEC.getProtocolVersion()) {
-            session.disconnect(LanguageUtils.getLocaleStringLog("geyser.network.outdated.client", GeyserConnector.BEDROCK_PACKET_CODEC.getMinecraftVersion()));
+            session.disconnect(LanguageUtils.getPlayerLocaleString("geyser.network.outdated.client", session.getClientData().getLanguageCode(), GeyserConnector.BEDROCK_PACKET_CODEC.getMinecraftVersion()));
             return true;
         }
 

@@ -77,9 +77,7 @@ public class WebUtils {
      */
     public static void downloadFile(String reqURL, String fileLocation) {
         try {
-            HttpURLConnection con = (HttpURLConnection) new URL(reqURL).openConnection();
-            con.setRequestProperty("User-Agent", "Geyser-" + GeyserConnector.getInstance().getPlatformType().toString() + "/" + GeyserConnector.VERSION);
-            InputStream in = con.getInputStream();
+            InputStream in = new URL(reqURL).openStream();
             Files.copy(in, Paths.get(fileLocation), StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
             throw new AssertionError("Unable to download and save file: " + fileLocation + " (" + reqURL + ")", e);
@@ -92,7 +90,6 @@ public class WebUtils {
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("POST");
         con.setRequestProperty("Content-Type", "text/plain");
-        con.setRequestProperty("User-Agent", "Geyser-" + GeyserConnector.getInstance().getPlatformType().toString() + "/" + GeyserConnector.VERSION);
         con.setDoOutput(true);
 
         OutputStream out = con.getOutputStream();

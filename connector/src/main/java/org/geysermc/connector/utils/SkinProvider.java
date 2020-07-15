@@ -36,7 +36,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -380,11 +379,7 @@ public class SkinProvider {
     private static BufferedImage downloadImage(String imageUrl, CapeProvider provider) throws IOException {
         if (provider == CapeProvider.FIVEZIG)
             return readFiveZigCape(imageUrl);
-
-        HttpURLConnection con = (HttpURLConnection) new URL(imageUrl).openConnection();
-        con.setRequestProperty("User-Agent", "Geyser-" + GeyserConnector.getInstance().getPlatformType().toString() + "/" + GeyserConnector.VERSION);
-
-        BufferedImage image = ImageIO.read(con.getInputStream());
+        BufferedImage image = ImageIO.read(new URL(imageUrl));
         if (image == null) throw new NullPointerException();
         return image;
     }
