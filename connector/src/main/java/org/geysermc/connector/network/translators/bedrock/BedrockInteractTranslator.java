@@ -136,13 +136,24 @@ public class BedrockInteractTranslator extends PacketTranslator<InteractPacket> 
                 break;
             case OPEN_INVENTORY:
                 if (!session.getInventory().isOpen()) {
-                    ContainerOpenPacket containerOpenPacket = new ContainerOpenPacket();
-                    containerOpenPacket.setId((byte) 0);
-                    containerOpenPacket.setType(ContainerType.INVENTORY);
-                    containerOpenPacket.setUniqueEntityId(-1);
-                    containerOpenPacket.setBlockPosition(entity.getPosition().toInt());
-                    session.sendUpstreamPacket(containerOpenPacket);
-                    session.getInventory().setOpen(true);
+                    String ridingEntity = "fail";
+                    System.out.println(session.getRidingVehicleEntity().isValid());
+                    if(session.getRidingVehicleEntity().isValid()) {
+                        ridingEntity = session.getRidingVehicleEntity().getEntityType().toString();
+                    }
+                    if(ridingEntity == "HORSE") {
+                        System.out.println("made it threw if statement test");
+                        ClientPlayerStatePacket horseInventory = new ClientPlayerStatePacket(-1, PlayerState.OPEN_HORSE_INVENTORY, 0);
+                        session.sendDownstreamPacket(horseInventory);
+                    } else {
+                        ContainerOpenPacket containerOpenPacket = new ContainerOpenPacket();
+                        containerOpenPacket.setId((byte) 0);
+                        containerOpenPacket.setType(ContainerType.INVENTORY);
+                        containerOpenPacket.setUniqueEntityId(-1);
+                        containerOpenPacket.setBlockPosition(entity.getPosition().toInt());
+                        session.sendUpstreamPacket(containerOpenPacket);
+                        session.getInventory().setOpen(true);
+                    }
                 }
                 break;
         }
