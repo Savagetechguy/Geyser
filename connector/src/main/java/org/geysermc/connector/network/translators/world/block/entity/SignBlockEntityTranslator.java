@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 GeyserMC. http://geysermc.org
+ * Copyright (c) 2019-2021 GeyserMC. http://geysermc.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,54 +25,109 @@
 
 package org.geysermc.connector.network.translators.world.block.entity;
 
-import com.github.steveice10.mc.protocol.data.message.MessageSerializer;
 import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
-import com.nukkitx.nbt.NbtMap;
-import org.geysermc.connector.utils.MessageUtils;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.nukkitx.nbt.NbtMapBuilder;
+import org.geysermc.connector.network.translators.chat.MessageTranslator;
+import org.geysermc.connector.utils.SignUtils;
 
 @BlockEntity(name = "Sign", regex = "sign")
 public class SignBlockEntityTranslator extends BlockEntityTranslator {
+    /**
+     * Maps a color stored in a sign's Color tag to a Bedrock Edition formatting code.
+     * <br>
+     * The color names correspond to dye names, because of this we can't use {@link MessageTranslator#getColor(String)}.
+     *
+     * @param javaColor The dye color stored in the sign's Color tag.
+     * @return A Bedrock Edition formatting code for valid dye colors, otherwise an empty string.
+     */
+    private String getBedrockSignColor(String javaColor) {
+        String base = "\u00a7";
+        switch (javaColor) {
+            case "white":
+                base += 'f';
+                break;
+            case "orange":
+                base += '6';
+                break;
+            case "magenta":
+            case "purple":
+                base += '5';
+                break;
+            case "light_blue":
+                base += 'b';
+                break;
+            case "yellow":
+                base += 'e';
+                break;
+            case "lime":
+                base += 'a';
+                break;
+            case "pink":
+                base += 'd';
+                break;
+            case "gray":
+                base += '8';
+                break;
+            case "light_gray":
+                base += '7';
+                break;
+            case "cyan":
+                base += '3';
+                break;
+            case "blue":
+                base += '9';
+                break;
+            case "brown": // Brown does not have a bedrock counterpart.
+            case "red": // In Java Edition light red (&c) can only be applied using commands. Red dye gives &4.
+                base += '4';
+                break;
+            case "green":
+                base += '2';
+                break;
+            case "black":
+                base += '0';
+                break;
+            default:
+                return "";
+        }
+        return base;
+    }
 
     @Override
-    public Map<String, Object> translateTag(CompoundTag tag, int blockState) {
-        Map<String, Object> tags = new HashMap<>();
-
+    public void translateTag(NbtMapBuilder builder, CompoundTag tag, int blockState) {
         StringBuilder signText = new StringBuilder();
-        for(int i = 0; i < 4; i++) {
-            int currentLine = i+1;
+        for (int i = 0; i < 4; i++) {
+            int currentLine = i + 1;
             String signLine = getOrDefault(tag.getValue().get("Text" + currentLine), "");
-            signLine = MessageUtils.getBedrockMessage(MessageSerializer.fromString(signLine));
+            signLine = MessageTranslator.convertMessageLenient(signLine);
 
-            //Java allows up to 16+ characters on certain symbols. 
-            if(signLine.length() >= 15 && (signLine.contains("-") || signLine.contains("="))) {
-                signLine = signLine.substring(0, 14);
+            // Trim any trailing formatting codes
+            if (signLine.length() > 2 && signLine.toCharArray()[signLine.length() - 2] == '\u00a7') {
+                signLine = signLine.substring(0, signLine.length() - 2);
             }
 
-            signText.append(signLine);
+            // Check the character width on the sign to ensure there is no overflow that is usually hidden
+            // to Java Edition clients but will appear to Bedrock clients
+            int signWidth = 0;
+            StringBuilder finalSignLine = new StringBuilder();
+            for (char c : signLine.toCharArray()) {
+                signWidth += SignUtils.getCharacterWidth(c);
+                if (signWidth <= SignUtils.BEDROCK_CHARACTER_WIDTH_MAX) {
+                    finalSignLine.append(c);
+                } else {
+                    break;
+                }
+            }
+
+            // Java Edition 1.14 added the ability to change the text color of the whole sign using dye
+            if (tag.contains("Color")) {
+                signText.append(getBedrockSignColor(tag.get("Color").getValue().toString()));
+            }
+
+            signText.append(finalSignLine.toString());
             signText.append("\n");
         }
 
-        tags.put("Text", MessageUtils.getBedrockMessage(MessageSerializer.fromString(signText.toString())));
-        return tags;
-    }
-
-    @Override
-    public CompoundTag getDefaultJavaTag(String javaId, int x, int y, int z) {
-        CompoundTag tag = getConstantJavaTag(javaId, x, y, z);
-        tag.put(new com.github.steveice10.opennbt.tag.builtin.StringTag("Text1", "{\"text\":\"\"}"));
-        tag.put(new com.github.steveice10.opennbt.tag.builtin.StringTag("Text2", "{\"text\":\"\"}"));
-        tag.put(new com.github.steveice10.opennbt.tag.builtin.StringTag("Text3", "{\"text\":\"\"}"));
-        tag.put(new com.github.steveice10.opennbt.tag.builtin.StringTag("Text4", "{\"text\":\"\"}"));
-        return tag;
-    }
-
-    @Override
-    public NbtMap getDefaultBedrockTag(String bedrockId, int x, int y, int z) {
-        return getConstantBedrockTag(bedrockId, x, y, z).toBuilder()
-                .putString("Text", "")
-                .build();
+        builder.put("Text", signText.toString());
     }
 }

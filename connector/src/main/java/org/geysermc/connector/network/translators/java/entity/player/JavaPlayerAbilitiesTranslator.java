@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 GeyserMC. http://geysermc.org
+ * Copyright (c) 2019-2021 GeyserMC. http://geysermc.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,41 +26,22 @@
 package org.geysermc.connector.network.translators.java.entity.player;
 
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.player.ServerPlayerAbilitiesPacket;
-import com.nukkitx.protocol.bedrock.data.AdventureSetting;
-import com.nukkitx.protocol.bedrock.data.PlayerPermission;
-import com.nukkitx.protocol.bedrock.data.command.CommandPermission;
-import com.nukkitx.protocol.bedrock.packet.AdventureSettingsPacket;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import org.geysermc.connector.entity.Entity;
+import org.geysermc.connector.entity.player.PlayerEntity;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.network.translators.PacketTranslator;
 import org.geysermc.connector.network.translators.Translator;
-
-import java.util.Set;
 
 @Translator(packet = ServerPlayerAbilitiesPacket.class)
 public class JavaPlayerAbilitiesTranslator extends PacketTranslator<ServerPlayerAbilitiesPacket> {
 
     @Override
     public void translate(ServerPlayerAbilitiesPacket packet, GeyserSession session) {
-        Entity entity = session.getPlayerEntity();
+        PlayerEntity entity = session.getPlayerEntity();
         if (entity == null)
             return;
 
-        Set<AdventureSetting> playerFlags = new ObjectOpenHashSet<>();
-        playerFlags.add(AdventureSetting.AUTO_JUMP);
-        if (packet.isCanFly())
-            playerFlags.add(AdventureSetting.MAY_FLY);
-
-        if (packet.isFlying())
-            playerFlags.add(AdventureSetting.FLYING);
-
-        AdventureSettingsPacket adventureSettingsPacket = new AdventureSettingsPacket();
-        adventureSettingsPacket.setPlayerPermission(PlayerPermission.MEMBER);
-        // Required or the packet simply is not sent
-        adventureSettingsPacket.setCommandPermission(CommandPermission.NORMAL);
-        adventureSettingsPacket.setUniqueEntityId(entity.getGeyserId());
-        adventureSettingsPacket.getSettings().addAll(playerFlags);
-        session.sendUpstreamPacket(adventureSettingsPacket);
+        session.setCanFly(packet.isCanFly());
+        session.setFlying(packet.isFlying());
+        session.sendAdventureSettings();
     }
 }

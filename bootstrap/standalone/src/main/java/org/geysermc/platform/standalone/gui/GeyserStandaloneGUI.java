@@ -1,27 +1,26 @@
 /*
- * Copyright (c) 2019-2020 GeyserMC. http://geysermc.org
+ * Copyright (c) 2019-2021 GeyserMC. http://geysermc.org
  *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *  The above copyright notice and this permission notice shall be included in
- *  all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- *  THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- *  @author GeyserMC
- *  @link https://github.com/GeyserMC/Geyser
- *
+ * @author GeyserMC
+ * @link https://github.com/GeyserMC/Geyser
  */
 
 package org.geysermc.platform.standalone.gui;
@@ -262,14 +261,30 @@ public class GeyserStandaloneGUI {
 
         for (Map.Entry<String, GeyserCommand> command : geyserCommandManager.getCommands().entrySet()) {
             // Remove the offhand command and any alias commands to prevent duplicates in the list
-            if ("offhand".equals(command.getValue().getName()) || command.getValue().getAliases().contains(command.getKey())) {
+            if (!command.getValue().isExecutableOnConsole() || command.getValue().getAliases().contains(command.getKey())) {
                 continue;
             }
 
             // Create the button that runs the command
-            JMenuItem commandButton = new JMenuItem(command.getValue().getName());
+            boolean hasSubCommands = command.getValue().hasSubCommands();
+            // Add an extra menu if there are more commands that can be run
+            JMenuItem commandButton = hasSubCommands ? new JMenu(command.getValue().getName()) : new JMenuItem(command.getValue().getName());
             commandButton.getAccessibleContext().setAccessibleDescription(command.getValue().getDescription());
-            commandButton.addActionListener(e -> command.getValue().execute(geyserStandaloneLogger, new String[]{ }));
+            if (!hasSubCommands) {
+                commandButton.addActionListener(e -> command.getValue().execute(null, geyserStandaloneLogger, new String[]{ }));
+            } else {
+                // Add a submenu that's the same name as the menu can't be pressed
+                JMenuItem otherCommandButton = new JMenuItem(command.getValue().getName());
+                otherCommandButton.getAccessibleContext().setAccessibleDescription(command.getValue().getDescription());
+                otherCommandButton.addActionListener(e -> command.getValue().execute(null, geyserStandaloneLogger, new String[]{ }));
+                commandButton.add(otherCommandButton);
+                // Add a menu option for all possible subcommands
+                for (String subCommandName : command.getValue().getSubCommands()) {
+                    JMenuItem item = new JMenuItem(subCommandName);
+                    item.addActionListener(e -> command.getValue().execute(null, geyserStandaloneLogger, new String[]{subCommandName}));
+                    commandButton.add(item);
+                }
+            }
             commandsMenu.add(commandButton);
         }
 
@@ -292,7 +307,7 @@ public class GeyserStandaloneGUI {
                 playerTableModel.getDataVector().removeAllElements();
 
                 for (GeyserSession player : GeyserConnector.getInstance().getPlayers()) {
-                    Vector row = new Vector();
+                    Vector<String> row = new Vector<>();
                     row.add(player.getSocketAddress().getHostName());
                     row.add(player.getPlayerEntity().getUsername());
 

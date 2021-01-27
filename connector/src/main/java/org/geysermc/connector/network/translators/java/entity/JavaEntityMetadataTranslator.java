@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 GeyserMC. http://geysermc.org
+ * Copyright (c) 2019-2021 GeyserMC. http://geysermc.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ import org.geysermc.connector.network.translators.Translator;
 
 import com.github.steveice10.mc.protocol.data.game.entity.metadata.EntityMetadata;
 import com.github.steveice10.mc.protocol.packet.ingame.server.entity.ServerEntityMetadataPacket;
+import org.geysermc.connector.utils.LanguageUtils;
 
 @Translator(packet = ServerEntityMetadataPacket.class)
 public class JavaEntityMetadataTranslator extends PacketTranslator<ServerEntityMetadataPacket> {
@@ -45,7 +46,20 @@ public class JavaEntityMetadataTranslator extends PacketTranslator<ServerEntityM
         if (entity == null) return;
 
         for (EntityMetadata metadata : packet.getMetadata()) {
-            entity.updateBedrockMetadata(metadata, session);
+            try {
+                entity.updateBedrockMetadata(metadata, session);
+            } catch (ClassCastException e) {
+                // Class cast exceptions are really the only ones we're going to get in normal gameplay
+                // Because some entity rewriters forget about some values
+                // Any other errors are actual bugs
+                session.getConnector().getLogger().warning(LanguageUtils.getLocaleStringLog("geyser.network.translator.metadata.failed", metadata, entity.getEntityType()));
+                session.getConnector().getLogger().debug("Entity Java ID: " + entity.getEntityId() + ", Geyser ID: " + entity.getGeyserId());
+                if (session.getConnector().getConfig().isDebugMode()) {
+                    e.printStackTrace();
+                }
+            }
         }
+
+        entity.updateBedrockMetadata(session);
     }
 }

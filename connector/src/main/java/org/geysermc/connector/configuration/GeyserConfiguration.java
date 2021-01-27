@@ -1,34 +1,32 @@
 /*
- * Copyright (c) 2019-2020 GeyserMC. http://geysermc.org
+ * Copyright (c) 2019-2021 GeyserMC. http://geysermc.org
  *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *  The above copyright notice and this permission notice shall be included in
- *  all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- *  THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- *  @author GeyserMC
- *  @link https://github.com/GeyserMC/Geyser
- *
+ * @author GeyserMC
+ * @link https://github.com/GeyserMC/Geyser
  */
 
 package org.geysermc.connector.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.geysermc.connector.GeyserLogger;
-
 import org.geysermc.connector.utils.LanguageUtils;
 
 import java.nio.file.Path;
@@ -36,8 +34,8 @@ import java.util.Map;
 
 public interface GeyserConfiguration {
 
-    // Modify this when you update the config
-    int CURRENT_CONFIG_VERSION = 3;
+    // Modify this when you introduce breaking changes into the config
+    int CURRENT_CONFIG_VERSION = 4;
 
     IBedrockConfiguration getBedrock();
 
@@ -49,6 +47,9 @@ public interface GeyserConfiguration {
 
     @JsonIgnore
     boolean isPassthroughMotd();
+
+    @JsonIgnore
+    boolean isPassthroughProtocolName();
 
     @JsonIgnore
     boolean isPassthroughPlayerCounts();
@@ -70,13 +71,23 @@ public interface GeyserConfiguration {
 
     boolean isShowCooldown();
 
+    boolean isShowCoordinates();
+
     String getDefaultLocale();
 
-    Path getFloodgateKeyFile();
+    Path getFloodgateKeyPath();
 
     boolean isAboveBedrockNetherBuilding();
 
     boolean isCacheChunks();
+
+    boolean isForceResourcePacks();
+
+    boolean isXboxAchievementsEnabled();
+
+    int getCacheImages();
+
+    boolean isAllowCustomSkulls();
 
     IMetricsInfo getMetrics();
 
@@ -86,9 +97,13 @@ public interface GeyserConfiguration {
 
         int getPort();
 
+        boolean isCloneRemotePort();
+
         String getMotd1();
 
         String getMotd2();
+
+        String getServerName();
     }
 
     interface IRemoteConfiguration {
@@ -96,18 +111,28 @@ public interface GeyserConfiguration {
         String getAddress();
 
         int getPort();
-        
+
         void setAddress(String address);
 
         void setPort(int port);
 
         String getAuthType();
+
+        boolean isPasswordAuthentication();
+
+        boolean isUseProxyProtocol();
     }
 
     interface IUserAuthenticationInfo {
         String getEmail();
 
         String getPassword();
+
+        /**
+         * Will be removed after Microsoft accounts are fully migrated
+         */
+        @Deprecated
+        boolean isMicrosoftAccount();
     }
 
     interface IMetricsInfo {
@@ -116,6 +141,15 @@ public interface GeyserConfiguration {
 
         String getUniqueId();
     }
+
+    int getScoreboardPacketThreshold();
+
+    // if u have offline mode enabled pls be safe
+    boolean isEnableProxyConnections();
+
+    int getMtu();
+
+    boolean isUseAdapters();
 
     int getConfigVersion();
 

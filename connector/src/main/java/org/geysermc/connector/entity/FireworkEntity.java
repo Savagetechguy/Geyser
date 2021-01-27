@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 GeyserMC. http://geysermc.org
+ * Copyright (c) 2019-2021 GeyserMC. http://geysermc.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,10 +36,12 @@ import com.nukkitx.nbt.NbtMapBuilder;
 import com.nukkitx.nbt.NbtType;
 import com.nukkitx.protocol.bedrock.data.entity.EntityData;
 import com.nukkitx.protocol.bedrock.packet.SetEntityMotionPacket;
+import org.geysermc.connector.entity.player.PlayerEntity;
 import org.geysermc.connector.entity.type.EntityType;
 import org.geysermc.connector.network.session.GeyserSession;
 import org.geysermc.connector.utils.FireworkColor;
 import org.geysermc.connector.utils.MathUtils;
+import org.geysermc.floodgate.util.DeviceOS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,13 +57,26 @@ public class FireworkEntity extends Entity {
     public void updateBedrockMetadata(EntityMetadata entityMetadata, GeyserSession session) {
         if (entityMetadata.getId() == 7) {
             ItemStack item = (ItemStack) entityMetadata.getValue();
+            if (item == null) {
+                return;
+            }
             CompoundTag tag = item.getNbt();
 
             if (tag == null) {
                 return;
             }
 
+            // TODO: Remove once Mojang fixes bugs with fireworks crashing clients on these specific devices.
+            // https://bugs.mojang.com/browse/MCPE-89115
+            if (session.getClientData().getDeviceOS() == DeviceOS.XBOX_ONE || session.getClientData().getDeviceOS() == DeviceOS.ORBIS) {
+                return;
+            }
+
             CompoundTag fireworks = tag.get("Fireworks");
+            if (fireworks == null) {
+                // Thank you Mineplex very cool
+                return;
+            }
 
             NbtMapBuilder fireworksBuilder = NbtMap.builder();
             if (fireworks.get("Flight") != null) {

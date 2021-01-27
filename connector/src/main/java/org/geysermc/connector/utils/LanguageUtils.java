@@ -1,27 +1,26 @@
 /*
- * Copyright (c) 2019-2020 GeyserMC. http://geysermc.org
+ * Copyright (c) 2019-2021 GeyserMC. http://geysermc.org
  *
- *  Permission is hereby granted, free of charge, to any person obtaining a copy
- *  of this software and associated documentation files (the "Software"), to deal
- *  in the Software without restriction, including without limitation the rights
- *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the Software is
- *  furnished to do so, subject to the following conditions:
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- *  The above copyright notice and this permission notice shall be included in
- *  all copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- *  THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
- *  @author GeyserMC
- *  @link https://github.com/GeyserMC/Geyser
- *
+ * @author GeyserMC
+ * @link https://github.com/GeyserMC/Geyser
  */
 
 package org.geysermc.connector.utils;
@@ -60,6 +59,8 @@ public class LanguageUtils {
      */
     public static void loadGeyserLocale(String locale) {
         locale = formatLocale(locale);
+        // Don't load the locale if it's already loaded.
+        if (LOCALE_MAPPINGS.containsKey(locale)) return;
 
         InputStream localeStream = GeyserConnector.class.getClassLoader().getResourceAsStream("languages/texts/" + locale + ".properties");
 
@@ -104,7 +105,11 @@ public class LanguageUtils {
         locale = formatLocale(locale);
 
         Properties properties = LOCALE_MAPPINGS.get(locale);
-        String formatString = properties.getProperty(key);
+        String formatString = null;
+
+        if (properties != null) {
+            formatString = properties.getProperty(key);
+        }
 
         // Try and get the key from the default locale
         if (formatString == null) {
@@ -123,7 +128,7 @@ public class LanguageUtils {
             formatString = key;
         }
 
-        return MessageFormat.format(formatString.replace("&", "\u00a7"), values);
+        return MessageFormat.format(formatString.replace("'", "''").replace("&", "\u00a7"), values);
     }
 
     /**
@@ -132,20 +137,10 @@ public class LanguageUtils {
      * @param locale The locale to format
      * @return The formatted locale
      */
-    private static String formatLocale(String locale) {
+    public static String formatLocale(String locale) {
         try {
             String[] parts = locale.toLowerCase().split("_");
-            String newLocale = parts[0] + "_" + parts[1].toUpperCase();
-            switch (newLocale) { // Fallback to the closest language if we don't support it but Bedrock does.
-                case "es_MX":
-                    return "es_ES";
-                case "pt_BR":
-                    return "pt_PT";
-                case "fr_CA":
-                    return "fr_FR";
-                default:
-                    return newLocale;
-            }
+            return parts[0] + "_" + parts[1].toUpperCase();
         } catch (Exception e) {
             return locale;
         }
@@ -192,7 +187,11 @@ public class LanguageUtils {
         if (FileUtils.class.getResource("/languages/texts/" + locale + ".properties") == null) {
             result = false;
             if (GeyserConnector.getInstance() != null && GeyserConnector.getInstance().getLogger() != null) { // Could be too early for these to be initialized
-                GeyserConnector.getInstance().getLogger().warning(locale + " is not a valid Bedrock language."); // We can't translate this since we just loaded an invalid language
+                if (locale.equals("en_US")) {
+                    GeyserConnector.getInstance().getLogger().error("English locale not found in Geyser. Did you clone the submodules? (git submodule update --init)");
+                } else {
+                    GeyserConnector.getInstance().getLogger().warning(locale + " is not a valid Bedrock language."); // We can't translate this since we just loaded an invalid language
+                }
             }
         } else {
             if (!LOCALE_MAPPINGS.containsKey(locale)) {

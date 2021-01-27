@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 GeyserMC. http://geysermc.org
+ * Copyright (c) 2019-2021 GeyserMC. http://geysermc.org
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,7 +50,7 @@ public class JavaSpawnParticleTranslator extends PacketTranslator<ServerSpawnPar
         LevelEventPacket particle = new LevelEventPacket();
         switch (packet.getParticle().getType()) {
             case BLOCK:
-                particle.setType(LevelEventType.PARTICLE_DESTROY_BLOCK);
+                particle.setType(LevelEventType.PARTICLE_DESTROY_BLOCK_NO_SOUND);
                 particle.setPosition(Vector3f.from(packet.getX(), packet.getY(), packet.getZ()));
                 particle.setData(BlockTranslator.getBedrockBlockId(((BlockParticleData) packet.getParticle().getData()).getBlockState()));
                 session.sendUpstreamPacket(particle);
@@ -94,7 +94,7 @@ public class JavaSpawnParticleTranslator extends PacketTranslator<ServerSpawnPar
                     if (stringParticle != null) {
                         SpawnParticleEffectPacket stringPacket = new SpawnParticleEffectPacket();
                         stringPacket.setIdentifier(stringParticle);
-                        stringPacket.setDimensionId(DimensionUtils.javaToBedrock(session.getPlayerEntity().getDimension()));
+                        stringPacket.setDimensionId(DimensionUtils.javaToBedrock(session.getDimension()));
                         stringPacket.setPosition(Vector3f.from(packet.getX(), packet.getY(), packet.getZ()));
                         session.sendUpstreamPacket(stringPacket);
                     }
